@@ -5,11 +5,14 @@ import pandas as pd
 import folium
 from folium.plugins import BeautifyIcon
 from streamlit_folium import st_folium
+from streamlit_js_eval import get_geolocation
 import re
 import json
 import os
 from geopy.geocoders import Nominatim
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+LOCATION = get_geolocation()
 
 # Set page config
 st.set_page_config(page_title="Tabelog Top 100 Map", page_icon="🍽️", layout="wide")
@@ -303,8 +306,13 @@ def _geocode_address(restaurant):
     return None, None
 
 
-def create_map(restaurants_df):
-    """Create a Folium map with restaurant markers."""
+def create_map(restaurants_df, current_location=None):
+    """Create a Folium map with restaurant markers.
+
+    Args:
+        restaurants_df: DataFrame with restaurant data
+        current_location: tuple of (latitude, longitude) for user's current location
+    """
     # Convert rating to numeric and sort by rating descending (before filtering)
     df_sorted = restaurants_df.copy()
     df_sorted["rating_numeric"] = pd.to_numeric(df_sorted["rating"], errors="coerce")
@@ -318,15 +326,26 @@ def create_map(restaurants_df):
     # Filter restaurants with valid coordinates (keeping original rank)
     valid_df = df_sorted.dropna(subset=["latitude", "longitude"]).copy()
 
+    # Determine map center - use current location if available, otherwise default to Tokyo
+    map_center = [35.6852, 139.7528]
+
     if valid_df.empty:
         st.warning("No restaurants could be geocoded. Showing default map.")
-        m = folium.Map(location=[35.6852, 139.7528], zoom_start=11, tiles=None)
+        m = folium.Map(location=map_center, zoom_start=11, tiles=None)
         folium.TileLayer("CartoDB Voyager", name="CartoDB Voyager").add_to(m)
+        # Add current location marker even if no restaurants
+        if current_location:
+            folium.Marker(
+                location=[current_location[0], current_location[1]],
+                popup="📍 You are here",
+                tooltip="Your current location",
+                icon=folium.Icon(color="blue", icon="user", prefix="fa"),
+            ).add_to(m)
         folium.LayerControl().add_to(m)
         return m
 
     # Create map with no default tiles
-    m = folium.Map(location=[35.6852, 139.7528], zoom_start=12, tiles=None)
+    m = folium.Map(location=map_center, zoom_start=12, tiles=None)
 
     # Add multiple tile layers for user to choose from
     folium.TileLayer("OpenStreetMap", name="OpenStreetMap").add_to(m)
@@ -369,6 +388,15 @@ def create_map(restaurants_df):
             icon=icon,
         ).add_to(m)
 
+    # Add current location marker if available
+    if current_location:
+        folium.Marker(
+            location=[current_location[0], current_location[1]],
+            popup="📍 You are here",
+            tooltip="Your current location",
+            icon=folium.Icon(color="blue", icon="user", prefix="fa"),
+        ).add_to(m)
+
     # Add layer control for switching map styles
     folium.LayerControl().add_to(m)
 
@@ -380,16 +408,44 @@ def main():
     with st.sidebar:
         st.header("🏆 Award Categories")
 
+        # All Tabelog Hyakumeiten categories in order from website
+        # Using Tokyo where available, otherwise East (for Tokyo area)
         example_urls = {
-            "🍱 Top 100 Tokyo": "https://award.tabelog.com/hyakumeiten/japanese_tokyo?pref=tokyo",
-            "🍢 Yakitori Tokyo": "https://award.tabelog.com/hyakumeiten/yakitori_east?pref=tokyo",
-            "🍕 Pizza Tokyo": "https://award.tabelog.com/hyakumeiten/pizza?pref=tokyo",
-            "🍶 Standing Drinking Tokyo": "https://award.tabelog.com/hyakumeiten/tachinomi?pref=tokyo",
-            "🥩 Steak East": "https://award.tabelog.com/hyakumeiten/steak_east?pref=tokyo",
+            "🍱 Tokyo Top 100": "https://award.tabelog.com/hyakumeiten/japanese_tokyo?pref=tokyo",
             "🍜 Ramen Tokyo": "https://award.tabelog.com/hyakumeiten/ramen_tokyo?pref=tokyo",
-            "🍛 Curry Tokyo": "https://award.tabelog.com/hyakumeiten/curry_tokyo/2024?pref=tokyo",
-            "🍗 Tonkatsu Tokyo": "https://award.tabelog.com/hyakumeiten/tonkatsu/2024?pref=tokyo",
-            "🍲 Sukiyaki Tokyo": "https://award.tabelog.com/hyakumeiten/sukiyaki_shabushabu/2024?pref=tokyo",
+            "🍢 Yakitori East": "https://award.tabelog.com/hyakumeiten/yakitori_east?pref=tokyo",
+            "🐔 Chicken Dishes": "https://award.tabelog.com/hyakumeiten/toriryori?pref=tokyo",
+            "🥩 Yakiniku Tokyo": "https://award.tabelog.com/hyakumeiten/yakiniku_tokyo?pref=tokyo",
+            "🍺 Izakaya East": "https://award.tabelog.com/hyakumeiten/izakaya_east?pref=tokyo",
+            "🍶 Standing Bar": "https://award.tabelog.com/hyakumeiten/tachinomi?pref=tokyo",
+            "🥞 Okonomiyaki": "https://award.tabelog.com/hyakumeiten/okonomiyaki?pref=tokyo",
+            "🥩 Steak East": "https://award.tabelog.com/hyakumeiten/steak_east?pref=tokyo",
+            "🍜 Soba East": "https://award.tabelog.com/hyakumeiten/soba_east?pref=tokyo",
+            "☕ Cafe East": "https://award.tabelog.com/hyakumeiten/cafe_east?pref=tokyo",
+            "🍛 Yoshoku East": "https://award.tabelog.com/hyakumeiten/yoshoku_east?pref=tokyo",
+            "🇫🇷 French Tokyo": "https://award.tabelog.com/hyakumeiten/french_tokyo?pref=tokyo",
+            "🎨 Creative/Innovative": "https://award.tabelog.com/hyakumeiten/creative_innovative?pref=tokyo",
+            "🇮🇹 Italian Tokyo": "https://award.tabelog.com/hyakumeiten/italian_tokyo?pref=tokyo",
+            "🍕 Pizza": "https://award.tabelog.com/hyakumeiten/pizza?pref=tokyo",
+            "🍤 Tempura": "https://award.tabelog.com/hyakumeiten/tempura?pref=tokyo",
+            "🍣 Sushi Tokyo": "https://award.tabelog.com/hyakumeiten/sushi_tokyo?pref=tokyo",
+            "🍚 Shokudo": "https://award.tabelog.com/hyakumeiten/shokudo?pref=tokyo",
+            "🍲 Sukiyaki/Shabu-shabu": "https://award.tabelog.com/hyakumeiten/sukiyaki_shabushabu?pref=tokyo",
+            "🇪🇸 Spanish": "https://award.tabelog.com/hyakumeiten/spanish?pref=tokyo",
+            "🍛 Curry Tokyo": "https://award.tabelog.com/hyakumeiten/curry_tokyo?pref=tokyo",
+            "🍜 Asian/Ethnic Tokyo": "https://award.tabelog.com/hyakumeiten/asia_ethnic_tokyo?pref=tokyo",
+            "🐟 Unagi": "https://award.tabelog.com/hyakumeiten/unagi?pref=tokyo",
+            "🥟 Gyoza": "https://award.tabelog.com/hyakumeiten/gyoza?pref=tokyo",
+            "🥡 Chinese Tokyo": "https://award.tabelog.com/hyakumeiten/chinese_tokyo?pref=tokyo",
+            "🍗 Tonkatsu": "https://award.tabelog.com/hyakumeiten/tonkatsu?pref=tokyo",
+            "🍔 Hamburger": "https://award.tabelog.com/hyakumeiten/hamburger?pref=tokyo",
+            "🍜 Udon East": "https://award.tabelog.com/hyakumeiten/udon_east?pref=tokyo",
+            "🍡 Wagashi Tokyo": "https://award.tabelog.com/hyakumeiten/wagashi_tokyo?pref=tokyo",
+            "🍰 Sweets Tokyo": "https://award.tabelog.com/hyakumeiten/sweets_tokyo?pref=tokyo",
+            "🍦 Ice Cream/Gelato": "https://award.tabelog.com/hyakumeiten/ice_gelato?pref=tokyo",
+            "🍸 Bar": "https://award.tabelog.com/hyakumeiten/bar?pref=tokyo",
+            "🍞 Bread Tokyo": "https://award.tabelog.com/hyakumeiten/bread_tokyo?pref=tokyo",
+            "☕ Kissaten": "https://award.tabelog.com/hyakumeiten/kissaten?pref=tokyo",
         }
 
         # Initialize session state for URL if not exists
@@ -538,8 +594,16 @@ def main():
 
         st.subheader("📍 Restaurant Map")
 
+        # Get current location from browser
+        current_location = None
+        if LOCATION and "coords" in LOCATION:
+            current_location = (
+                LOCATION["coords"]["latitude"],
+                LOCATION["coords"]["longitude"],
+            )
+
         # Create and display map (layer control is built into the map)
-        m = create_map(df)
+        m = create_map(df, current_location=current_location)
         st_folium(m, width=None, height=600, use_container_width=True)
 
         # Show statistics
