@@ -21,12 +21,7 @@ A Streamlit app that visualizes Tabelog's Hyakumeiten (百名店 / Top 100) awar
 docker build -t tabelog-map .
 
 # Run the container
-docker run -p 8501:8501 tabelog-map
-```
-
-To persist the cache between container restarts:
-```bash
-docker run -p 8501:8501 -v $(pwd)/tabelog_cache.json:/app/tabelog_cache.json tabelog-map
+docker run -d -p 8501:8501 -v $(pwd)/tabelog_cache.json:/app/tabelog_cache.json --name tabelog-map tabelog-map
 ```
 
 Then open http://localhost:8501 in your browser.

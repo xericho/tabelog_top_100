@@ -376,45 +376,43 @@ def create_map(restaurants_df):
 
 
 def main():
-    st.title("🍽 Tabelog Top 100 Restaurant Map")
-    st.markdown(
-        """
-    Enter a Tabelog Hyakumeiten (百名店) award page URL to visualize all restaurants on a map.\n
-    🔗 Browse all lists: 
-    <a href="https://award.tabelog.com/hyakumeiten" target="_blank" 
-        style="color: #d32323; text-decoration: none; font-weight: bold;">
-        Tabelog Hyakumeiten Awards
-    </a>
-    """,
-        unsafe_allow_html=True,
-    )
+    # Sidebar with award categories
+    with st.sidebar:
+        st.header("🏆 Award Categories")
 
-    # Example URL buttons
-    st.markdown("**Quick Select:**")
-    example_urls = {
-        "🍱 Top 100 Tokyo": "https://award.tabelog.com/hyakumeiten/japanese_tokyo?pref=tokyo",
-        "🍢 Yakitori Tokyo": "https://award.tabelog.com/hyakumeiten/yakitori_east?pref=tokyo",
-        "🍕 Pizza Tokyo": "https://award.tabelog.com/hyakumeiten/pizza?pref=tokyo",
-        "🍶 Standing Drinking Tokyo": "https://award.tabelog.com/hyakumeiten/tachinomi?pref=tokyo",
-        "🥩 Steak East": "https://award.tabelog.com/hyakumeiten/steak_east?pref=tokyo",
-        "🍜 Ramen Tokyo": "https://award.tabelog.com/hyakumeiten/ramen_tokyo?pref=tokyo",
-        "🍛 Curry Tokyo": "https://award.tabelog.com/hyakumeiten/curry_tokyo/2024?pref=tokyo",
-        "🍗 Tonkatsu Tokyo": "https://award.tabelog.com/hyakumeiten/tonkatsu/2024?pref=tokyo",
-        "🍲 Sukiyaki Tokyo": "https://award.tabelog.com/hyakumeiten/sukiyaki_shabushabu/2024?pref=tokyo",
-    }
+        example_urls = {
+            "🍱 Top 100 Tokyo": "https://award.tabelog.com/hyakumeiten/japanese_tokyo?pref=tokyo",
+            "🍢 Yakitori Tokyo": "https://award.tabelog.com/hyakumeiten/yakitori_east?pref=tokyo",
+            "🍕 Pizza Tokyo": "https://award.tabelog.com/hyakumeiten/pizza?pref=tokyo",
+            "🍶 Standing Drinking Tokyo": "https://award.tabelog.com/hyakumeiten/tachinomi?pref=tokyo",
+            "🥩 Steak East": "https://award.tabelog.com/hyakumeiten/steak_east?pref=tokyo",
+            "🍜 Ramen Tokyo": "https://award.tabelog.com/hyakumeiten/ramen_tokyo?pref=tokyo",
+            "🍛 Curry Tokyo": "https://award.tabelog.com/hyakumeiten/curry_tokyo/2024?pref=tokyo",
+            "🍗 Tonkatsu Tokyo": "https://award.tabelog.com/hyakumeiten/tonkatsu/2024?pref=tokyo",
+            "🍲 Sukiyaki Tokyo": "https://award.tabelog.com/hyakumeiten/sukiyaki_shabushabu/2024?pref=tokyo",
+        }
 
-    # Initialize session state for URL if not exists
-    if "selected_url" not in st.session_state:
-        st.session_state["selected_url"] = (
-            "https://award.tabelog.com/hyakumeiten/japanese_tokyo?pref=tokyo"
+        # Initialize session state for URL if not exists
+        if "selected_url" not in st.session_state:
+            st.session_state["selected_url"] = (
+                "https://award.tabelog.com/hyakumeiten/japanese_tokyo?pref=tokyo"
+            )
+
+        for label, example_url in example_urls.items():
+            if st.button(label, key=f"sidebar_{label}", use_container_width=True):
+                st.session_state["selected_url"] = example_url
+
+        st.divider()
+        st.markdown(
+            """
+            🔗 [Browse all Tabelog awards](https://award.tabelog.com/hyakumeiten)
+            """,
         )
 
-    # Create button columns
-    cols = st.columns(3)
-    for i, (label, example_url) in enumerate(example_urls.items()):
-        with cols[i % 3]:
-            if st.button(label, key=f"example_{i}", use_container_width=True):
-                st.session_state["selected_url"] = example_url
+    st.title("🍽 Tabelog Top 100 Restaurant Map")
+    st.markdown(
+        "Enter a Tabelog Hyakumeiten (百名店) award page URL to visualize all restaurants on a map."
+    )
 
     # URL input
     url = st.text_input(
