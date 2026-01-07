@@ -1,4 +1,4 @@
-# Tabelog Top 100 Restaurant Map �️
+# Tabelog Top 100 Restaurant Map 
 
 A Streamlit app that visualizes Tabelog's Hyakumeiten (百名店 / Top 100) award-winning restaurants on an interactive map.
 
@@ -13,6 +13,25 @@ A Streamlit app that visualizes Tabelog's Hyakumeiten (百名店 / Top 100) awar
 - 📥 Export data to CSV
 
 ## Installation
+
+### Option 1: Docker (Recommended)
+
+```bash
+# Build the image
+docker build -t tabelog-map .
+
+# Run the container
+docker run -p 8501:8501 tabelog-map
+```
+
+To persist the cache between container restarts:
+```bash
+docker run -p 8501:8501 -v $(pwd)/tabelog_cache.json:/app/tabelog_cache.json tabelog-map
+```
+
+Then open http://localhost:8501 in your browser.
+
+### Option 2: Local Python
 
 1. Create a virtual environment (recommended):
 ```bash
