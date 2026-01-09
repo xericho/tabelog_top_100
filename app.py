@@ -461,19 +461,21 @@ def main():
         st.divider()
         st.markdown(
             """
-            🔗 [Browse all Tabelog awards](https://award.tabelog.com/hyakumeiten)
+            🔗 [Browse all Tabelog categories](https://award.tabelog.com/hyakumeiten)
             """,
         )
 
     st.title("🍽 Tabelog Top 100 Restaurant Map")
     st.markdown(
-        "Enter a Tabelog Hyakumeiten (百名店) award page URL to visualize all restaurants on a map."
+        """
+        Select a **top 100 category** in the sidebar or enter a Tabelog Hyakumeiten (百名店) award page URL to visualize all restaurants on a map.
+        
+        👉  [Browse all Tabelog categories](https://award.tabelog.com/hyakumeiten)
+        """
     )
 
     # URL input
-    url = st.text_input(
-        "Enter Tabelog Award URL:", value=st.session_state["selected_url"]
-    )
+    url = st.text_input("Tabelog Category URL:", value=st.session_state["selected_url"])
 
     # Load cache
     cache = load_cache()
