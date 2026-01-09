@@ -465,7 +465,7 @@ def main():
             """,
         )
 
-    st.title("🍽 Tabelog Top 100 Restaurant Map")
+    st.title("🍽 Tabelog Top 100 Map")
     st.markdown(
         """
         Select a **top 100 category** in the sidebar or enter a Tabelog Hyakumeiten (百名店) award page URL to visualize all restaurants on a map.
